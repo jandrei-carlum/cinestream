@@ -4,57 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CineStream - Google Drive Media Explorer</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0b0f19;
-      color: #f8fafc;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #111827;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #374151;
-      border-radius: 3px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #4b5563;
-    }
+    body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+    button:focus-visible { outline: 2px solid #ef4444; outline-offset: 2px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col custom-scrollbar selection:bg-red-600 selection:text-white">
 
-  <!-- Header / Navigation Bar -->
+  <!-- Header -->
   <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-    <div class="flex items-center gap-6">
-      <div class="flex items-center gap-3 cursor-pointer" onclick="navigateToPath([])">
-        <div class="bg-gradient-to-tr from-red-600 to-rose-500 text-white p-2 rounded-xl font-bold flex items-center justify-center w-10 h-10 shadow-lg shadow-red-600/30">
-          <i class="fa-solid fa-play text-lg"></i>
-        </div>
-        <div>
-          <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">CineStream</span>
-          <span class="block text-[10px] text-slate-400 font-semibold uppercase tracking-widest">Drive Explorer</span>
-        </div>
+    <button class="flex items-center gap-3 text-left" onclick="navigateToPath([])" aria-label="Go to home">
+      <div class="bg-gradient-to-tr from-red-600 to-rose-500 text-white p-2 rounded-xl font-bold flex items-center justify-center w-10 h-10 shadow-lg shadow-red-600/30">
+        <i class="fa-solid fa-play text-lg"></i>
       </div>
-    </div>
+      <div>
+        <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">CineStream</span>
+        <span class="block text-[10px] text-slate-400 font-semibold uppercase tracking-widest">Drive Explorer</span>
+      </div>
+    </button>
 
-    <!-- Search & Actions -->
     <div class="flex items-center gap-3">
       <div class="relative w-44 sm:w-64">
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-        <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search current folder..." class="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 text-slate-200 placeholder-slate-500 transition-colors">
+        <input type="text" id="searchInput" placeholder="Search current folder..." class="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 text-slate-200 placeholder-slate-500 transition-colors">
       </div>
-
       <button onclick="syncDriveFolder()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-1.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all hover:scale-105" title="Rescan Google Drive">
         <i class="fa-solid fa-rotate text-red-500" id="syncIcon"></i>
         <span class="hidden sm:inline">Sync Now</span>
@@ -62,26 +42,19 @@
     </div>
   </header>
 
-  <!-- Status / Loading Bar -->
-  <div id="statusBar" class="bg-slate-900/60 border-b border-slate-800/80 px-6 py-2 text-xs text-slate-400 flex justify-between items-center transition-all hidden">
+  <!-- Status Bar -->
+  <div id="statusBar" class="bg-slate-900/60 border-b border-slate-800/80 px-6 py-2 text-xs text-slate-400 flex justify-between items-center hidden">
     <div class="flex items-center gap-2">
       <i class="fa-solid fa-circle-notch animate-spin text-red-500" id="statusSpinner"></i>
       <span id="statusMessage">Syncing drive folder hierarchy...</span>
     </div>
-    <span id="itemCountBadge" class="bg-slate-800 px-2.5 py-0.5 rounded-md text-slate-300 font-mono">0 items</span>
+    <span id="lastSyncText" class="text-slate-500"></span>
   </div>
 
-  <!-- Main View Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 space-y-6">
+    <nav class="flex items-center gap-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl px-4 py-3 overflow-x-auto custom-scrollbar" id="breadcrumbNav" aria-label="Breadcrumb"></nav>
 
-    <!-- Interactive Breadcrumb Navigation -->
-    <nav class="flex items-center gap-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl px-4 py-3 overflow-x-auto custom-scrollbar" id="breadcrumbNav">
-      <!-- Populated dynamically via JavaScript -->
-    </nav>
-
-    <!-- Explorer Folder Content Section -->
     <section>
-      <!-- Folders Group -->
       <div id="foldersSection" class="space-y-3 mb-8 hidden">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
           <i class="fa-solid fa-folder text-amber-500"></i> Folders
@@ -89,13 +62,12 @@
         <div id="foldersGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
       </div>
 
-      <!-- Videos Group -->
       <div id="videosSection" class="space-y-3">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2" id="videosSectionTitle">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
           <i class="fa-solid fa-film text-red-500"></i> Video Files
+          <span id="itemCountBadge" class="bg-slate-800 px-2 py-0.5 rounded-md text-slate-300 font-mono normal-case tracking-normal">0 items</span>
         </h3>
-        
-        <!-- Empty State Container -->
+
         <div id="emptyFolderState" class="hidden bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center flex flex-col items-center justify-center gap-3">
           <div class="w-16 h-16 bg-slate-800/80 rounded-2xl flex items-center justify-center text-slate-500 text-2xl border border-slate-700">
             <i class="fa-solid fa-folder-open"></i>
@@ -109,14 +81,14 @@
     </section>
   </main>
 
-  <!-- Video Player Modal -->
-  <div id="playerModal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col justify-between p-4 sm:p-8 backdrop-blur-xl">
+  <!-- Player Modal -->
+  <div id="playerModal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col justify-between p-4 sm:p-8 backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="flex justify-between items-center text-white max-w-6xl w-full mx-auto">
       <div class="flex items-center gap-3 overflow-hidden">
         <span class="bg-red-600 text-white font-bold text-xs uppercase px-2.5 py-1 rounded-md tracking-wider">Playing</span>
         <h2 id="modalTitle" class="text-base sm:text-lg font-bold truncate">Movie Title</h2>
       </div>
-      <button onclick="closePlayer()" class="text-slate-400 hover:text-white text-2xl p-2 rounded-xl hover:bg-slate-800 transition-all">
+      <button onclick="closePlayer()" class="text-slate-400 hover:text-white text-2xl p-2 rounded-xl hover:bg-slate-800 transition-all" aria-label="Close player">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
@@ -126,37 +98,178 @@
     </div>
 
     <div class="max-w-6xl w-full mx-auto flex items-center justify-between text-xs text-slate-500">
-      <span id="modalPathText" class="truncate font-mono">Source: Google Drive Embed Stream</span>
-      <span>CineStream Engine</span>
+      <span>Video not loading? It may be too large or over Drive's quota.</span>
+      <a id="openInDriveLink" href="#" target="_blank" rel="noopener noreferrer" class="text-red-400 hover:text-red-300 font-semibold">
+        Open in Google Drive <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </a>
     </div>
   </div>
 
-  <!-- JavaScript Logic -->
   <script>
-    // Configuration Variables
-    let apiKey = "AIzaSyCLcQ0JTzjL-JWUa8iK8b9utCwU_V9ZBJg";
-    let folderId = "1nEuUwyEVG9FYpqv9ti7c9Z-SyrSvVVXj";
+    // ================= CONFIG =================
+    // Paste your NEW restricted API key here (the old one was exposed).
+    const API_KEY = "AIzaSyCLcQ0JTzjL-JWUa8iK8b9utCwU_V9ZBJg";
+    const ROOT_FOLDER_ID = "1nEuUwyEVG9FYpqv9ti7c9Z-SyrSvVVXj";
 
-    // Application State
-    let driveTree = JSON.parse(localStorage.getItem('cinestream_tree_cache') || 'null');
-    let currentPath = []; // Array of folder objects representing current breadcrumb path: [{id, name}, ...]
+    const CACHE_KEY = 'cinestream_tree_cache_v2';
+    const WATCHED_KEY = 'cinestream_watched';
+    const VIDEO_EXTENSIONS = ['mp4', 'mkv', 'webm', 'mov', 'm4v', 'avi', 'ts'];
 
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!driveTree) {
-        syncDriveFolder();
-      } else {
-        renderCurrentFolder();
+    // ================= STATE =================
+    let driveTree = null;
+    let lastSync = null;
+    let currentPath = []; // [{id, name}, ...]
+    let watched = loadJSON(WATCHED_KEY, {});
+    let foldersScanned = 0;
+    let isSyncing = false;
+
+    // ================= HELPERS =================
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
       }
-    });
-
-    // Helper: Check valid video extension
-    function isVideoFile(fileName) {
-      const ext = fileName.split('.').pop().toLowerCase();
-      return ['mp4', 'mkv', 'webm', 'mov', 'm4v', 'avi', 'ts'].includes(ext);
     }
 
-    // Recursively scan Google Drive API and construct tree structure
+    function saveJSON(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.warn('Could not save to localStorage:', e);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function isVideoFile(file) {
+      if (file.mimeType && file.mimeType.startsWith('video/')) return true;
+      const ext = file.name.split('.').pop().toLowerCase();
+      return VIDEO_EXTENSIONS.includes(ext);
+    }
+
+    // Natural sort: "Episode 2" comes before "Episode 10"
+    const naturalSort = (a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+
+    function debounce(fn, delay = 200) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    function timeAgo(timestamp) {
+      if (!timestamp) return '';
+      const mins = Math.floor((Date.now() - timestamp) / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs} hr ago`;
+      return `${Math.floor(hrs / 24)} day(s) ago`;
+    }
+
+    // ================= INIT =================
+    document.addEventListener('DOMContentLoaded', () => {
+      const cached = loadJSON(CACHE_KEY, null);
+      if (cached && cached.tree) {
+        driveTree = cached.tree;
+        lastSync = cached.timestamp;
+        updateLastSyncText();
+        renderCurrentFolder();
+      } else {
+        syncDriveFolder();
+      }
+
+      document.getElementById('searchInput').addEventListener('input', debounce(renderCurrentFolder, 200));
+
+      // Esc closes the player
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closePlayer();
+      });
+
+      // Click on the dark backdrop closes the player
+      document.getElementById('playerModal').addEventListener('click', (e) => {
+        if (e.target.id === 'playerModal') closePlayer();
+      });
+    });
+
+    function updateLastSyncText() {
+      const el = document.getElementById('lastSyncText');
+      el.textContent = lastSync ? `Last synced: ${timeAgo(lastSync)}` : '';
+    }
+
+    // ================= GOOGLE DRIVE =================
+    // Fetch ALL pages of files inside one folder
+    async function fetchAllFilesInFolder(folderId) {
+      let files = [];
+      let pageToken = '';
+
+      do {
+        const params = new URLSearchParams({
+          q: `'${folderId}' in parents and trashed = false`,
+          fields: 'nextPageToken,files(id,name,mimeType)',
+          pageSize: '1000',
+          supportsAllDrives: 'true',
+          includeItemsFromAllDrives: 'true',
+          key: API_KEY
+        });
+        if (pageToken) params.set('pageToken', pageToken);
+
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`);
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.error) {
+          const msg = data.error?.message || `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+
+        files = files.concat(data.files || []);
+        pageToken = data.nextPageToken || '';
+      } while (pageToken);
+
+      return files;
+    }
+
+    // Recursively build the tree; subfolders are scanned IN PARALLEL
+    async function fetchDirectoryTree(folderId, folderName) {
+      const files = await fetchAllFilesInFolder(folderId);
+
+      foldersScanned++;
+      document.getElementById('statusMessage').textContent =
+        `Scanning Drive... ${foldersScanned} folder(s) done`;
+
+      const node = { id: folderId, name: folderName, folders: [], videos: [] };
+      const subfolderPromises = [];
+
+      for (const file of files) {
+        if (file.mimeType === 'application/vnd.google-apps.folder') {
+          subfolderPromises.push(fetchDirectoryTree(file.id, file.name));
+        } else if (isVideoFile(file)) {
+          node.videos.push({ id: file.id, name: file.name });
+        }
+      }
+
+      node.folders = await Promise.all(subfolderPromises);
+      node.folders.sort(naturalSort);
+      node.videos.sort(naturalSort);
+      return node;
+    }
+
     async function syncDriveFolder() {
+      if (isSyncing) return;
+      isSyncing = true;
+      foldersScanned = 0;
+
       const statusBar = document.getElementById('statusBar');
       const statusMessage = document.getElementById('statusMessage');
       const statusSpinner = document.getElementById('statusSpinner');
@@ -168,104 +281,66 @@
       statusMessage.textContent = 'Building Google Drive directory tree...';
 
       try {
-        const rootTree = await fetchDirectoryTree(folderId, 'Home');
-        driveTree = rootTree;
-        localStorage.setItem('cinestream_tree_cache', JSON.stringify(driveTree));
+        const tree = await fetchDirectoryTree(ROOT_FOLDER_ID, 'Home');
+        driveTree = tree;
+        lastSync = Date.now();
+        saveJSON(CACHE_KEY, { tree: driveTree, timestamp: lastSync });
+
+        // If the folder we were viewing no longer exists, go back home
+        if (!getCurrentFolderNode(true)) currentPath = [];
 
         statusMessage.textContent = 'Directory structure updated!';
-        statusSpinner.classList.add('hidden');
-        syncIcon.classList.remove('animate-spin');
-
-        setTimeout(() => statusBar.classList.add('hidden'), 4000);
+        updateLastSyncText();
         renderCurrentFolder();
+        setTimeout(() => statusBar.classList.add('hidden'), 3000);
       } catch (err) {
-        console.error("Sync Failure:", err);
-        statusMessage.textContent = `Sync Error: ${err.message || 'Check API key or permissions'}`;
+        console.error('Sync failure:', err);
+        statusMessage.textContent = `Sync error: ${err.message}. Check your API key, referrer restrictions, and that the folder is shared as "Anyone with the link".`;
+      } finally {
         statusSpinner.classList.add('hidden');
         syncIcon.classList.remove('animate-spin');
+        isSyncing = false;
       }
     }
 
-    async function fetchDirectoryTree(currentId, currentName) {
-      const query = `'${currentId}' in parents and trashed = false`;
-      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType)&key=${apiKey}`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.error) {
-        throw new Error(data.error.message);
-      }
-
-      let folderNode = {
-        id: currentId,
-        name: currentName,
-        folders: [],
-        videos: []
-      };
-
-      if (data.files) {
-        for (const file of data.files) {
-          if (file.mimeType === 'application/vnd.google-apps.folder') {
-            const subTree = await fetchDirectoryTree(file.id, file.name);
-            folderNode.folders.push(subTree);
-          } else if (file.mimeType.startsWith('video/') || isVideoFile(file.name)) {
-            folderNode.videos.push({
-              id: file.id,
-              name: file.name
-            });
-          }
-        }
-      }
-
-      // Sort folders and videos alphabetically
-      folderNode.folders.sort((a, b) => a.name.localeCompare(b.name));
-      folderNode.videos.sort((a, b) => a.name.localeCompare(b.name));
-
-      return folderNode;
-    }
-
-    // Get current node based on currentPath stack
-    function getCurrentFolderNode() {
+    // ================= NAVIGATION =================
+    function getCurrentFolderNode(strict = false) {
       if (!driveTree) return null;
       let node = driveTree;
       for (const step of currentPath) {
         const found = node.folders.find(f => f.id === step.id);
         if (found) node = found;
-        else break;
+        else return strict ? null : node;
       }
       return node;
     }
 
-    // Navigation and Breadcrumb Render
     function navigateToPath(pathArray) {
       currentPath = pathArray;
       document.getElementById('searchInput').value = '';
       renderCurrentFolder();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function openSubFolder(folderId, folderName) {
-      currentPath.push({ id: folderId, name: folderName });
+    function openSubFolder(id, name) {
+      currentPath = [...currentPath, { id, name }];
       document.getElementById('searchInput').value = '';
       renderCurrentFolder();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // ================= RENDERING =================
     function renderBreadcrumbs() {
       const nav = document.getElementById('breadcrumbNav');
       nav.innerHTML = '';
 
-      // Home item
       const homeBtn = document.createElement('button');
       homeBtn.className = `flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${currentPath.length === 0 ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`;
       homeBtn.innerHTML = `<i class="fa-solid fa-house text-xs"></i> <span>Home</span>`;
       homeBtn.onclick = () => navigateToPath([]);
       nav.appendChild(homeBtn);
 
-      // Path Segments
-      let accumulatedPath = [];
       currentPath.forEach((segment, index) => {
-        accumulatedPath.push(segment);
-
         const separator = document.createElement('span');
         separator.className = 'text-slate-600 text-xs';
         separator.innerHTML = `<i class="fa-solid fa-chevron-right text-[10px]"></i>`;
@@ -274,15 +349,13 @@
         const isLast = index === currentPath.length - 1;
         const btn = document.createElement('button');
         btn.className = `px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isLast ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`;
-        btn.textContent = segment.name;
-        
-        const pathCopy = [...accumulatedPath];
+        btn.textContent = segment.name; // textContent is safe
+        const pathCopy = currentPath.slice(0, index + 1);
         btn.onclick = () => navigateToPath(pathCopy);
         nav.appendChild(btn);
       });
     }
 
-    // Render Folders and Media Grid
     function renderCurrentFolder() {
       renderBreadcrumbs();
 
@@ -298,30 +371,30 @@
 
       if (!currentNode) {
         emptyState.classList.remove('hidden');
+        foldersSection.classList.add('hidden');
         return;
       }
 
-      // Filter based on search query
       const matchingFolders = currentNode.folders.filter(f => f.name.toLowerCase().includes(searchVal));
       const matchingVideos = currentNode.videos.filter(v => v.name.toLowerCase().includes(searchVal));
-
       const totalItems = matchingFolders.length + matchingVideos.length;
       document.getElementById('itemCountBadge').textContent = `${totalItems} items`;
 
-      // Render Folders
+      // Folders
       if (matchingFolders.length > 0) {
         foldersSection.classList.remove('hidden');
         matchingFolders.forEach(folder => {
           const itemCount = folder.folders.length + folder.videos.length;
-          const card = document.createElement('div');
-          card.className = "bg-slate-900/90 border border-slate-800 hover:border-slate-600 p-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl group";
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className = "text-left bg-slate-900/90 border border-slate-800 hover:border-slate-600 p-4 rounded-2xl flex items-center justify-between transition-all hover:scale-[1.02] hover:shadow-xl group";
           card.innerHTML = `
             <div class="flex items-center gap-3 overflow-hidden">
               <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <i class="fa-solid fa-folder text-lg"></i>
               </div>
               <div class="overflow-hidden">
-                <h4 class="font-bold text-sm text-slate-200 truncate group-hover:text-amber-400 transition-colors">${folder.name}</h4>
+                <h4 class="font-bold text-sm text-slate-200 truncate group-hover:text-amber-400 transition-colors">${escapeHtml(folder.name)}</h4>
                 <span class="text-xs text-slate-500">${itemCount} items</span>
               </div>
             </div>
@@ -334,64 +407,67 @@
         foldersSection.classList.add('hidden');
       }
 
-      // Render Videos
-      if (matchingVideos.length > 0) {
-        matchingVideos.forEach(video => {
-          const cleanTitle = video.name.replace(/\.[^/.]+$/, "");
-          const card = document.createElement('div');
-          card.className = "group bg-slate-900/80 rounded-2xl overflow-hidden border border-slate-800 hover:border-slate-600 transition-all hover:scale-[1.03] shadow-lg cursor-pointer flex flex-col justify-between";
-          card.innerHTML = `
-            <div class="aspect-video bg-slate-950 relative overflow-hidden flex items-center justify-center p-4">
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent z-10"></div>
-              <i class="fa-solid fa-film text-4xl text-slate-800 group-hover:text-red-500 group-hover:scale-110 transition-all duration-300"></i>
-              
-              <div class="absolute inset-0 z-20 bg-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <div class="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                  <i class="fa-solid fa-play text-sm ml-0.5"></i>
-                </div>
+      // Videos
+      matchingVideos.forEach(video => {
+        const cleanTitle = video.name.replace(/\.[^/.]+$/, '');
+        const isWatched = !!watched[video.id];
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = "text-left group bg-slate-900/80 rounded-2xl overflow-hidden border border-slate-800 hover:border-slate-600 transition-all hover:scale-[1.03] shadow-lg flex flex-col justify-between";
+        card.innerHTML = `
+          <div class="aspect-video bg-slate-950 relative overflow-hidden flex items-center justify-center">
+            <i class="fa-solid fa-film text-4xl text-slate-800 group-hover:text-red-500 transition-all duration-300"></i>
+            <img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(video.id)}&sz=w480"
+                 alt="" loading="lazy" referrerpolicy="no-referrer"
+                 class="absolute inset-0 w-full h-full object-cover"
+                 onerror="this.remove()">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent z-10"></div>
+            ${isWatched ? `<span class="absolute top-2 left-2 z-20 bg-emerald-600/90 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded-md"><i class="fa-solid fa-check"></i> Watched</span>` : ''}
+            <div class="absolute inset-0 z-20 bg-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div class="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-play text-sm ml-0.5"></i>
               </div>
             </div>
-            
-            <div class="p-3.5 bg-slate-900">
-              <h4 class="font-bold text-sm text-slate-200 line-clamp-1 group-hover:text-red-400 transition-colors">${cleanTitle}</h4>
-              <p class="text-xs text-slate-500 truncate mt-1">${video.name}</p>
-            </div>
-          `;
-          card.onclick = () => playVideo(video.id, cleanTitle);
-          videosGrid.appendChild(card);
-        });
-      }
+          </div>
+          <div class="p-3.5 bg-slate-900">
+            <h4 class="font-bold text-sm text-slate-200 line-clamp-1 group-hover:text-red-400 transition-colors">${escapeHtml(cleanTitle)}</h4>
+            <p class="text-xs text-slate-500 truncate mt-1">${escapeHtml(video.name)}</p>
+          </div>
+        `;
+        card.onclick = () => playVideo(video.id, cleanTitle);
+        videosGrid.appendChild(card);
+      });
 
-      // Show/Hide Empty State
-      if (totalItems === 0) {
-        emptyState.classList.remove('hidden');
-      } else {
-        emptyState.classList.add('hidden');
-      }
+      emptyState.classList.toggle('hidden', totalItems !== 0);
     }
 
-    // Video Player Trigger
+    // ================= PLAYER =================
     function playVideo(id, title) {
       const modal = document.getElementById('playerModal');
-      const player = document.getElementById('iframePlayer');
       document.getElementById('modalTitle').textContent = title;
-
-      player.src = `https://drive.google.com/file/d/${id}/preview`;
+      document.getElementById('iframePlayer').src = `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`;
+      document.getElementById('openInDriveLink').href = `https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+      document.body.style.overflow = 'hidden'; // lock background scroll
+
+      // Mark as watched
+      if (!watched[id]) {
+        watched[id] = Date.now();
+        saveJSON(WATCHED_KEY, watched);
+      }
     }
 
     function closePlayer() {
       const modal = document.getElementById('playerModal');
-      const player = document.getElementById('iframePlayer');
-      player.src = '';
+      if (modal.classList.contains('hidden')) return;
+
+      document.getElementById('iframePlayer').src = '';
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-    }
-
-    function handleSearch() {
-      renderCurrentFolder();
+      document.body.style.overflow = '';
+      renderCurrentFolder(); // refresh "Watched" badges
     }
   </script>
 </body>
